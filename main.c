@@ -20,6 +20,7 @@
 sys_window_t window;
 sysaudio_t audio;
 allocator_t memory;
+allocator_t tmpMemory;
 
 vec3_t shipMesh[] = {
 	{-0.4f, -0.5f},
@@ -31,7 +32,8 @@ vec3_t shipMesh[] = {
 
 int main()
 {
-	sys_init_window(&window, "Asteroids", 1280, 720, WINDOW_CENTERED);
+	sys_init_log("./output.log");
+	sys_init_window(&window, "Asteroids", 1920, 1080, WINDOW_CENTERED);
 	sys_init_opengl(&window);
 	// sys_init_audio(&audio, (sysaudio_spec_t){
 	// 	.sampleRate = SYSAUDIO_SAMPLE_RATE_44K,
@@ -42,6 +44,8 @@ int main()
 	// audio_buffer_t* shootSound = load
 
 	memory = virtual_heap_allocator(MB(10), MB(10));
+	tmpMemory = virtual_heap_allocator(MB(1), MB(1));
+	str_set_allocator(&tmpMemory);
 
 	G_Init();
 	D_Init();
@@ -51,5 +55,7 @@ int main()
 
 		G_Frame();
 		D_DrawFrame();
+
+		clear_allocator(&tmpMemory);
 	}
 }
