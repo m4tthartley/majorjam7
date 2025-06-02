@@ -123,7 +123,7 @@ void D_DrawSpriteTile(v2 pos, int tile) {
 
 void D_DrawFrame()
 {
-	glClearColor(1, 0, 0, 1);
+	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT);
 	CheckGLError();
 
@@ -176,6 +176,9 @@ void D_DrawFrame()
 				// glEnable(GL_TEXTURE_2D);
 				// glColor4f(1, 1, 1, 1);
 			}
+			if (tile->type == TILE_DIRT) {
+				D_DrawSpriteTile(vec2f(0), tile->water>0.5f ? 49 : 48);
+			}
 			if (tile->type == TILE_MARSH) {
 				D_DrawSpriteTile(vec2f(0), tile->water>0.5f ? 57 : 56);
 			}
@@ -216,7 +219,11 @@ void D_DrawFrame()
 			if (tile->plant.alive) {
 				vec2_t pos = vec2((float)-mapSize.x/2 + x + 0.5f, (float)-mapSize.y/2 + y + 0.5f);
 				// gfx_draw_text(&FONT_DEFAULT, pos, "Hi");
-				gfx_draw_sprite_rect(add2(pos, vec2(0, tile->plant.def.spriteSize.y/64 + tile->plant.def.tileOffset)), tile->plant.def.spriteOffset, tile->plant.def.spriteSize);
+				gfx_draw_sprite_rect(
+					add2(pos, vec2(0, tile->plant.def.spriteSize.y/64 + tile->plant.def.tileOffset)),
+					add2(tile->plant.def.spriteOffset, vec2(tile->plant.def.spriteSize.x * tile->plant.stage, 0)),
+					tile->plant.def.spriteSize
+				);
 			}
 		}
 	}
@@ -297,9 +304,9 @@ void D_DrawFrame()
 		gfx_texture(0);
 		glLoadIdentity();
 		gfx_color(vec4(0.2f, 0.3f, 0.3f, 1));
-		gfx_quad(vec2f(0), vec2(10, 10));
+		gfx_quad(vec2f(0), vec2(12, 10));
 
-		vec2_t cursorStart = { -5.0f + 0.125f, 5.0f-0.25f - 0.125f - 1.0f};
+		vec2_t cursorStart = { -6.0f + 0.125f, 5.0f-0.25f - 0.125f - 1.0f};
 		vec2_t cursor = cursorStart;
 		// vec2_t textStep = {0.25f+0.125f, -(0.25f+0.125f)};
 		vec2_t textStep = {0, -(0.25f+0.125f)};
@@ -308,15 +315,25 @@ void D_DrawFrame()
 		for (int i=0; i<array_size(plantDefs); ++i) {
 			plant_def_t* plant = plantDefs + i;
 
+			// float col = i > 5 ? 6.0f : 0.0f;
+			float col = 0;
+			if (i == 5) {
+				cursor.x += 6.0f;
+				cursor.y = cursorStart.y;
+			}
+
 			gfx_texture(&fontTex);
-			gfx_draw_text(&FONT_DEFAULT, add2(cursor, vec2(2.0f, 0)), plant->name);
+			gfx_draw_text(&FONT_DEFAULT, add2(cursor, vec2(col + 2.0f, 0)), plant->name);
+			char priceStr[64];
+			sprint(priceStr, 64, "Price: $%u", plant->cost);
+			gfx_draw_text(&FONT_DEFAULT, add2(cursor, vec2(col + 2.0f, 0.25f)), priceStr);
 
 			gfx_texture(&plantTex);
-			gfx_draw_sprite_rect(add2(cursor, add2(div2f(plant->spriteSize, 64), vec2(1.0f - plant->spriteSize.x/64, -0.3f))), plant->spriteOffset, plant->spriteSize);
+			gfx_draw_sprite_rect(add2(cursor, add2(div2f(plant->spriteSize, 64), vec2(col + 1.0f - plant->spriteSize.x/64, plant->tileOffset))), plant->spriteOffset, plant->spriteSize);
 
 			gfx_texture(0);
 			if (shopSelected == i) {
-				gfx_line_quad(add2(cursor, vec2(3, 0)), vec2(6, 2));
+				gfx_line_quad(add2(cursor, vec2(col + 3, 0)), vec2(6, 2));
 			}
 
 			cursor = add2(cursor, vec2(0, -2));
@@ -327,9 +344,49 @@ void D_DrawFrame()
 
 	// GLOBAL TEXT
 	glLoadIdentity();
+	glDisable(GL_TEXTURE_2D);
+	gfx_texture(0);
+
+	char str[64];
+	sprint(str, 64, "Weather: %s - Incoming weather warning: %s, %is", weatherNames[currentWeather], weatherNames[queuedWeather], (int)weatherEventTimer);
+	vec2_t strSize = gfx_layout_text(&FONT_DEFAULT, str);
+
+	char tileStr[64] = {0};
+	if (player.tile) {
+		sprint(tileStr, 64, tileNames[player.tile->type]);
+		if (player.tile->plant.alive) {
+			char plantStr[64];
+			sprint(plantStr, 64, " / %s, stage %i", plantDefs[player.tile->plant.def.type].name, (int)player.tile->plant.stageTimer);
+			// char_append(tileStr, " / ", 64);
+			// char_append(tileStr, plantDefs[player.tile->plant.def.type].name, 64);
+			char_append(tileStr, plantStr, 64);
+		}
+	}
+
+	char moneyStr[64];
+	sprint(moneyStr, 64, "Money: $%u", money);
+
+	glBegin(GL_QUADS);
+	glColor4f(0.0f, 0.0f, 0.0f, 0); glVertex3f((float)-mapSize.x/2, (float)mapSize.y/2 - 0.5f, 0);
+	glColor4f(0.0f, 0.0f, 0.0f, 0); glVertex3f((float)mapSize.x/2,   (float)mapSize.y/2 - 0.5f, 0);
+	glColor4f(0.0f, 0.0f, 0.0f, 0.5f); glVertex3f((float)mapSize.x/2,   (float)mapSize.y/2, 0); //glVertex3f((float)-mapSize.x/2 + strSize.x + 0.25f,   (float)mapSize.y/2, 0);
+	glColor4f(0.0f, 0.0f, 0.0f, 0.5f); glVertex3f((float)-mapSize.x/2, (float)mapSize.y/2, 0); //glVertex3f((float)-mapSize.x/2, (float)mapSize.y/2, 0);
+	glEnd();
+
+	glBegin(GL_QUADS);
+	glColor4f(0.0f, 0.0f, 0.0f, 0); glVertex3f((float)-mapSize.x/2, (float)-mapSize.y/2 + 0.5f, 0);
+	glColor4f(0.0f, 0.0f, 0.0f, 0); glVertex3f((float)mapSize.x/2,   (float)-mapSize.y/2 + 0.5f, 0);
+	glColor4f(0.0f, 0.0f, 0.0f, 0.5f); glVertex3f((float)mapSize.x/2,   (float)-mapSize.y/2, 0);
+	glColor4f(0.0f, 0.0f, 0.0f, 0.5f); glVertex3f((float)-mapSize.x/2, (float)-mapSize.y/2, 0);
+	glEnd();
+
+	glEnable(GL_TEXTURE_2D);
 	gfx_texture(&fontTex);
 	glColor4f(1, 1, 1, 1);
-	gfx_draw_text(&FONT_DEFAULT, vec2((float)-mapSize.x/2 + 0.25f, (float)mapSize.y/2 - 0.25f - 0.25f), "Weather: shit");
+	gfx_draw_text(&FONT_DEFAULT, vec2((float)-mapSize.x/2 + 0.125f, (float)mapSize.y/2 - 0.25f - 0.125f), str);
+	vec2_t moneyStrSize = gfx_layout_text(&FONT_DEFAULT, moneyStr);
+	gfx_draw_text(&FONT_DEFAULT, vec2((float)mapSize.x/2 - moneyStrSize.x - 0.125f, (float)mapSize.y/2 - 0.25f - 0.125f), moneyStr);
+	gfx_draw_text(&FONT_DEFAULT, vec2((float)-mapSize.x/2 + 0.125f, (float)-mapSize.y/2 + 0.125f), tileStr);
 
 
 	// PRESENT FRAMEBUFFER

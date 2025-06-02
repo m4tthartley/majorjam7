@@ -34,6 +34,7 @@ void AddPlant(plant_def_t plantDef)
 		.def = plantDef,
 		.health = 1.0f,
 		.alive = _True,
+		.stageTimer = 30.0f,
 	};
 
 	player.tile->plant = plant;
@@ -59,7 +60,7 @@ void G_Init()
 		mapTiles[i].type = TILE_SEA;
 		// if (height > 0.5f) {
 		if (mapIslandMask[i]) {
-			mapTiles[i].type = TILE_GRASS;
+			mapTiles[i].type = TILE_DIRT;
 			if (height > 0.55f) {
 				mapTiles[i].type = TILE_MARSH;
 			}
@@ -81,6 +82,7 @@ void G_Frame()
 	frametimer_update(&timer);
 	float dt = timer.dt;
 
+	// WEATHER
 	weatherEventTimer -= dt;
 	if (weatherEventTimer < 0.0f) {
 		weatherEventTimer = randfr(60.0f, 120.0f);
@@ -91,6 +93,7 @@ void G_Frame()
 	}
 
 	if (menuShop) {
+		// SHOP
 		if (window.keyboard[KEY_ESC].released) {
 			menuShop = _False;
 		}
@@ -107,6 +110,7 @@ void G_Frame()
 			menuShop = _False;
 		}
 	} else {
+		// PLAYER CONTROLS
 		if (window.keyboard[KEY_A].down) {
 			cameraPos.x -= 10.0f * dt;
 		}
@@ -163,6 +167,7 @@ void G_Frame()
 		}
 	}
 
+	// TILE SELECTION
 	vec2_t selectionOffset = mul2f(add2(dirVectors[player.aniDir], vec2(0, 0.25f)), 1.0f);
 	selectionPos = add2(player.pos, selectionOffset);
 	int2_t pos = int2(selectionPos.x + 0.5f, selectionPos.y + 0.5f);
@@ -174,6 +179,7 @@ void G_Frame()
 		menuShop = _True;
 	}
 
+	// TILES
 	for (int i=0; i<mapTotalTiles; ++i) {
 		tile_t* t = mapTiles + i;
 		t->ani += dt * 1.0f;
@@ -188,6 +194,11 @@ void G_Frame()
 
 		if (t->plant.alive) {
 			// t->water = max(t->water - 0.1f*dt, 0.0f);
+			t->plant.stageTimer -= dt;
+			if (t->plant.stageTimer <= 0.0f) {
+				t->plant.stage = min(t->plant.stage+1, 2);
+				t->plant.stageTimer = 30.0f;
+			}
 
 			uint32_t likesWater = t->plant.def.flags & PLANT_LIKES_WATER;
 			if (!likesWater && t->water > 1.0f) {
@@ -200,6 +211,7 @@ void G_Frame()
 		}
 	}
 
+	// RAIN
 	for (int i=0; i<array_size(rain); ++i) {
 		if (rain[i].timer < 0.0f) {
 			rain[i].pos.z -= 20.0f * dt;
@@ -232,6 +244,7 @@ void G_Frame()
 		}
 	}
 
+	// PARTICLES
 	for (int i=0; i<array_size(particles); ++i) {
 		particle_t* p = particles + i;
 		if (p->timer > 0) {

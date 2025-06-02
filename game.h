@@ -27,6 +27,13 @@ typedef struct {
 	float water;
 	plant_t plant;
 } tile_t;
+char* tileNames[] = {
+	"Grass",
+	"Marsh",
+	"Dirt",
+	"Water",
+	"Sea",
+};
 
 typedef struct {
 	vec2_t pos;
@@ -57,6 +64,13 @@ typedef enum {
 	WEATHER_HEAT,
 	WEATHER_COUNT,
 } weather_t;
+char* weatherNames[] = {
+	"Calm",
+	"Rain",
+	"Wind",
+	"Storm",
+	"Heat Wave",
+};
 
 _Bool mapIslandMask[20*11] = {
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -95,6 +109,7 @@ vec2_t cameraPos = {0};
 
 player_t player;
 vec2_t selectionPos;
+uint32_t money = 100;
 
 _Bool menuShop = _True;
 int32_t shopSelected = 0;
