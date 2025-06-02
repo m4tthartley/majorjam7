@@ -11,6 +11,8 @@
 #include <core/core.h>
 #include <core/math.h>
 
+#include "plant.h"
+
 
 typedef struct {
 	enum {
@@ -23,6 +25,7 @@ typedef struct {
 	float rotation;
 	float ani;
 	float water;
+	plant_t plant;
 } tile_t;
 
 typedef struct {
@@ -35,35 +38,25 @@ typedef struct {
 
 enum {
 	DIR_DOWN = 0,
-	DIR_UP = 1,
-	DIR_RIGHT = 2,
+	DIR_UP = 2,
+	DIR_RIGHT = 1,
 	DIR_LEFT = 3,
 } direction_t;
 vec2_t dirVectors[] = {
 	{ 0.0f, -1.0f},
-	{ 0.0f,  1.0f},
 	{ 1.0f,  0.0f},
+	{ 0.0f,  1.0f},
 	{-1.0f,  0.0f},
 };
 
 typedef enum {
-	PLANT_NONE,
-	PLANT_FLOWER,
-} plant_type_t;
-enum {
-	PLANT_LIKES_WATER,
-	PLANT_WATER_RESISTANT,
-	PLANT_WIND_RESISTANT,
-	PLANT_LIKES_SHADE,
-	PLANT_SHADE_RESISTANT,
-	PLANT_LIGHTNING_RESISTANT,
-} plant_flags_t;
-
-typedef struct {
-	plant_type_t type;
-	uint32_t flags;
-	float health;
-} plant_t;
+	WEATHER_CALM = 0,
+	WEATHER_RAIN,
+	WEATHER_WIND,
+	WEATHER_STORM,
+	WEATHER_HEAT,
+	WEATHER_COUNT,
+} weather_t;
 
 _Bool mapIslandMask[20*11] = {
 	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -103,6 +96,12 @@ vec2_t cameraPos = {0};
 player_t player;
 vec2_t selectionPos;
 
+_Bool menuShop = _True;
+int32_t shopSelected = 0;
+
 _Bool isRaining = _True;
+weather_t currentWeather;
+weather_t queuedWeather;
+float weatherEventTimer;
 
 #endif

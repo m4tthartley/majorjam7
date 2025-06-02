@@ -2,6 +2,7 @@
 CompileFlags:
   Add:
     - -I../core
+    - -Wno-c++11-compat-deprecated-writable-strings
 
 InlayHints:
   Enabled: false

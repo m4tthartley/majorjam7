@@ -56,6 +56,7 @@ int main()
 		G_Frame();
 		D_DrawFrame();
 
+		sys_zero_memory(tmpMemory.address, tmpMemory.commit);
 		clear_allocator(&tmpMemory);
 	}
 }
