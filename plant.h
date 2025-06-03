@@ -23,6 +23,7 @@ typedef enum {
 	PLANT_SWEET_POTATO,
 	PLANT_CARROT,
 	PLANT_SPINACH,
+	PLANT_COUNT,
 } plant_type_t;
 enum {
 	PLANT_FLAG_NONE				= 0,

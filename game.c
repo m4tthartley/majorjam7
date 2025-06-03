@@ -104,6 +104,12 @@ void G_Frame()
 		if (window.keyboard[KEY_UP].released) {
 			shopSelected = max(shopSelected - 1, 0);
 		}
+		if (window.keyboard[KEY_LEFT].released && shopSelected >= 5) {
+			shopSelected -= 5;
+		}
+		if (window.keyboard[KEY_RIGHT].released && shopSelected < 4) {
+			shopSelected += 5;
+		}
 
 		if (window.keyboard[KEY_RETURN].released && player.tile) {
 			AddPlant(plantDefs[shopSelected]);

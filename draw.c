@@ -299,49 +299,6 @@ void D_DrawFrame()
 		}
 	}
 
-	// MENU
-	if (menuShop) {
-		gfx_texture(0);
-		glLoadIdentity();
-		gfx_color(vec4(0.2f, 0.3f, 0.3f, 1));
-		gfx_quad(vec2f(0), vec2(12, 10));
-
-		vec2_t cursorStart = { -6.0f + 0.125f, 5.0f-0.25f - 0.125f - 1.0f};
-		vec2_t cursor = cursorStart;
-		// vec2_t textStep = {0.25f+0.125f, -(0.25f+0.125f)};
-		vec2_t textStep = {0, -(0.25f+0.125f)};
-
-		gfx_color(vec4f(1));
-		for (int i=0; i<array_size(plantDefs); ++i) {
-			plant_def_t* plant = plantDefs + i;
-
-			// float col = i > 5 ? 6.0f : 0.0f;
-			float col = 0;
-			if (i == 5) {
-				cursor.x += 6.0f;
-				cursor.y = cursorStart.y;
-			}
-
-			gfx_texture(&fontTex);
-			gfx_draw_text(&FONT_DEFAULT, add2(cursor, vec2(col + 2.0f, 0)), plant->name);
-			char priceStr[64];
-			sprint(priceStr, 64, "Price: $%u", plant->cost);
-			gfx_draw_text(&FONT_DEFAULT, add2(cursor, vec2(col + 2.0f, 0.25f)), priceStr);
-
-			gfx_texture(&plantTex);
-			gfx_draw_sprite_rect(add2(cursor, add2(div2f(plant->spriteSize, 64), vec2(col + 1.0f - plant->spriteSize.x/64, plant->tileOffset))), plant->spriteOffset, plant->spriteSize);
-
-			gfx_texture(0);
-			if (shopSelected == i) {
-				gfx_line_quad(add2(cursor, vec2(col + 3, 0)), vec2(6, 2));
-			}
-
-			cursor = add2(cursor, vec2(0, -2));
-			// gfx_draw_text(&FONT_DEFAULT, cursor, plant->name);
-			// cursor = add2(cursor, textStep);
-		}
-	}
-
 	// GLOBAL TEXT
 	glLoadIdentity();
 	glDisable(GL_TEXTURE_2D);
@@ -387,6 +344,85 @@ void D_DrawFrame()
 	vec2_t moneyStrSize = gfx_layout_text(&FONT_DEFAULT, moneyStr);
 	gfx_draw_text(&FONT_DEFAULT, vec2((float)mapSize.x/2 - moneyStrSize.x - 0.125f, (float)mapSize.y/2 - 0.25f - 0.125f), moneyStr);
 	gfx_draw_text(&FONT_DEFAULT, vec2((float)-mapSize.x/2 + 0.125f, (float)-mapSize.y/2 + 0.125f), tileStr);
+
+	// MENU
+	if (menuShop) {
+		gfx_texture(0);
+		glLoadIdentity();
+		gfx_color(vec4(0.1f, 0.2f, 0.2f, 0.75f));
+		gfx_quad(vec2f(0), vec2(mapSize.x, mapSize.y));
+		gfx_color(vec4(0.2f, 0.3f, 0.3f, 1));
+		gfx_quad(vec2f(0), vec2(12, 11));
+
+		gfx_texture(&fontTex);
+		gfx_color(vec4f(1));
+		gfx_draw_text(&FONT_DEFAULT, vec2(-6.0f + 0.125f, (float)mapSize.y/2 - 0.25f - 0.125f), "SHOP");
+		char* controlStr = "(ENTER) to buy a plant / (ESC) to leave shop";
+		vec2_t controlStrSize = gfx_layout_text(&FONT_DEFAULT, controlStr);
+		gfx_draw_text(&FONT_DEFAULT, vec2(6.0f - 0.125f - controlStrSize.x, (float)mapSize.y/2 - 0.25f - 0.125f), controlStr);
+
+		vec2_t cursorStart = { -6.0f + 0.125f, 5.25f-0.25f - 0.125f - 1.0f};
+		vec2_t cursor = cursorStart;
+		// vec2_t textStep = {0.25f+0.125f, -(0.25f+0.125f)};
+		vec2_t textStep = {0, -(0.25f+0.125f)};
+
+		gfx_color(vec4f(1));
+		for (int i=0; i<array_size(plantDefs); ++i) {
+			plant_def_t* plant = plantDefs + i;
+
+			// float col = i > 5 ? 6.0f : 0.0f;
+			float col = 0;
+			if (i == 5) {
+				cursor.x += 6.0f;
+				cursor.y = cursorStart.y;
+			}
+
+			gfx_texture(&fontTex);
+			gfx_draw_text(&FONT_DEFAULT, add2(cursor, vec2(col + 1.75f, 0.4f)), plant->name);
+			char priceStr[64];
+			sprint(priceStr, 64, "$%u", plant->cost);
+			gfx_draw_text(&FONT_DEFAULT, add2(cursor, vec2(col + 1.75f + 3.25f, 0.4f)), priceStr);
+
+			uint32_t flags[] = {
+				PLANT_LIKES_WATER,
+				PLANT_LIKES_DRY,
+				PLANT_LIKES_WIND,
+				PLANT_LIGHTNING_RESISTANT,
+			};
+			char* flagNames[] = {
+				"Flooding",
+				"Dry",
+				"Strong Wind",
+				"Lightning",
+			};
+			for (int i=0; i<array_size(flags); ++i) {
+				char str[64];
+				sprint(str, 64, "%s", flagNames[i]);
+				_Bool right = (i%2 == 1);
+				vec2_t pos = add2(cursor, vec2(col + 1.75f + (right ? 2.5f : 0), 0.3f + -0.5f - (0.4f*(i/2))));
+				gfx_texture(&iconsTex);
+				if (plant->flags & flags[i]) {
+					gfx_draw_sprite_rect(add2(pos, vec2(-0.25f, 0.125f)), vec2(0, 224), vec2(8, 8));
+				} else {
+					gfx_draw_sprite_rect(add2(pos, vec2(-0.25f, 0.125f)), vec2(8, 224), vec2(8, 8));
+				}
+				gfx_texture(&fontTex);
+				gfx_draw_text(&FONT_DEFAULT, pos, str);
+			}
+
+			gfx_texture(&plantTex);
+			gfx_draw_sprite_rect(add2(cursor, add2(div2f(plant->spriteSize, 64), vec2(col + 1.0f - plant->spriteSize.x/64 - 0.25f, plant->tileOffset))), plant->spriteOffset, plant->spriteSize);
+
+			gfx_texture(0);
+			if (shopSelected == i) {
+				gfx_line_quad(add2(cursor, vec2(col + 3, 0)), vec2(6, 2));
+			}
+
+			cursor = add2(cursor, vec2(0, -2));
+			// gfx_draw_text(&FONT_DEFAULT, cursor, plant->name);
+			// cursor = add2(cursor, textStep);
+		}
+	}
 
 
 	// PRESENT FRAMEBUFFER
