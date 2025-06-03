@@ -40,6 +40,23 @@ void AddPlant(plant_def_t plantDef)
 	player.tile->plant = plant;
 }
 
+void G_ResetRainDrop(raindrop_t* drop, _Bool init)
+{
+	// if (init) {
+		drop->timer = randfr(0.0f, 5.0f);
+	// } else {
+		// drop->timer = 0.0f;
+	// }
+	drop->pos = vec3(randfr(0.0f, mapSize.x) + 6.0f, randfr(0.0f, mapSize.y), randfr(25.0f, 25.0f));
+}
+
+void G_ResetAllRain()
+{
+	for (int i=0; i<array_size(rain); ++i) {
+		G_ResetRainDrop(rain + i, _True);
+	}
+}
+
 void G_Init()
 {
 	timer = frametimer_init();
@@ -69,10 +86,7 @@ void G_Init()
 		mapTiles[i].rotation = floorf(r);
 	}
 
-	for (int i=0; i<array_size(rain); ++i) {
-		rain[i].timer = randfr(0.0f, 5.0f);
-		rain[i].pos = vec3(randfr(0.0f, mapSize.x), randfr(0.0f, mapSize.y), randfr(20.0f, 30.0f));
-	}
+	G_ResetAllRain();
 
 	player.pos = vec2((float)mapSize.x/2, (float)mapSize.y/2);
 }
@@ -82,14 +96,24 @@ void G_Frame()
 	frametimer_update(&timer);
 	float dt = timer.dt;
 
+	static _Bool returnPressed = _False;
+	if (window.keyboard[KEY_RETURN].pressed) {
+		returnPressed = _True;
+	}
+
 	// WEATHER
 	weatherEventTimer -= dt;
 	if (weatherEventTimer < 0.0f) {
 		weatherEventTimer = randfr(60.0f, 120.0f);
 		print("A weather event is occuring.. \n");
 
+		if (!(currentWeather==WEATHER_RAIN || currentWeather==WEATHER_HEAVY_RAIN || currentWeather==WEATHER_STORM) &&
+			(queuedWeather==WEATHER_RAIN || queuedWeather==WEATHER_HEAVY_RAIN || queuedWeather==WEATHER_STORM)) {
+			G_ResetAllRain();
+		}
+
 		currentWeather = queuedWeather;
-		queuedWeather = randr(0, WEATHER_COUNT);
+		while ((queuedWeather = randr(0, WEATHER_COUNT)) == currentWeather);
 	}
 
 	if (menuShop) {
@@ -111,9 +135,13 @@ void G_Frame()
 			shopSelected += 5;
 		}
 
-		if (window.keyboard[KEY_RETURN].released && player.tile) {
-			AddPlant(plantDefs[shopSelected]);
-			menuShop = _False;
+		if (returnPressed && window.keyboard[KEY_RETURN].released && player.tile) {
+			if (money >= plantDefs[shopSelected].cost) {
+				AddPlant(plantDefs[shopSelected]);
+				money -= plantDefs[shopSelected].cost;
+				menuShop = _False;
+				returnPressed = _False;
+			}
 		}
 	} else {
 		// PLAYER CONTROLS
@@ -169,7 +197,11 @@ void G_Frame()
 		}
 
 		if (window.keyboard[KEY_R].released) {
-			isRaining = !isRaining;
+			currentWeather = WEATHER_HEAVY_RAIN;
+		}
+
+		if (window.keyboard[KEY_P].released) {
+			weatherEventTimer = 1.0f;
 		}
 	}
 
@@ -181,8 +213,22 @@ void G_Frame()
 	pos.x = max(min(pos.x, mapSize.x-1), 0);
 	pos.y = max(min(pos.y, mapSize.y-1), 0);
 	player.tile = &mapTiles[pos.y*mapSize.x + pos.x];
-	if (player.tile->type != TILE_SEA && window.keyboard[KEY_SPACE].released) {
-		menuShop = _True;
+	if (player.tile->type != TILE_SEA &&
+		returnPressed && window.keyboard[KEY_RETURN].released) {
+		if (player.tile->plant.alive) {
+			if (player.tile->plant.stage==2) {
+				money += player.tile->plant.def.profit;
+				if (player.tile->plant.def.reharvestable) {
+					player.tile->plant.stageTimer = 30.0f;
+					player.tile->plant.stage = 1;
+				} else {
+					player.tile->plant = (plant_t){0};
+				}
+			}
+		} else {
+			menuShop = _True;
+			returnPressed = _False;
+		}
 	}
 
 	// TILES
@@ -191,7 +237,7 @@ void G_Frame()
 		t->ani += dt * 1.0f;
 
 		if (t->water > 0.0f) {
-			if (isRaining) {
+			if (currentWeather == WEATHER_RAIN || currentWeather == WEATHER_HEAVY_RAIN) {
 				t->water -= 0.01f * dt;
 			} else {
 				t->water -= 0.05f * dt;
@@ -235,17 +281,24 @@ void G_Frame()
 					}
 				}
 
-				rain[i].timer = randfr(0.0f, 2.0f);
-				rain[i].pos = vec3(randfr(0.0f, mapSize.x), randfr(0.0f, mapSize.y), randfr(20.0f, 30.0f));
+				// rain[i].timer = randfr(0.0f, 0.0f);
+				// rain[i].pos = vec3(randfr(0.0f, mapSize.x), randfr(0.0f, mapSize.y), randfr(20.0f, 20.0f));
 
 				G_CreateParticle(vec3f2(rain[i].pos.xy, 0.1f), vec3(-randfr(0.25f, 0.5f), -randfr(0.25f, 0.5f), randfr(2.0f, 3.0f)));
 				G_CreateParticle(vec3f2(rain[i].pos.xy, 0.1f), vec3( randfr(0.25f, 0.5f), -randfr(0.25f, 0.5f), randfr(2.0f, 3.0f)));
 				G_CreateParticle(vec3f2(rain[i].pos.xy, 0.1f), vec3( randfr(0.25f, 0.5f),  randfr(0.25f, 0.5f), randfr(2.0f, 3.0f)));
 				G_CreateParticle(vec3f2(rain[i].pos.xy, 0.1f), vec3(-randfr(0.25f, 0.5f),  randfr(0.25f, 0.5f), randfr(2.0f, 3.0f)));
+
+				G_ResetRainDrop(rain + i, _False);
 			}
 		}
 
-		if (isRaining) {
+		if (currentWeather == WEATHER_RAIN) {
+			if (i <= (RAIN_COUNT/4)) {
+				rain[i].timer -= dt;
+			}
+		}
+		else if (currentWeather == WEATHER_HEAVY_RAIN || currentWeather == WEATHER_STORM) {
 			rain[i].timer -= dt;
 		}
 	}

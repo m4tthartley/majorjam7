@@ -199,19 +199,24 @@ void D_DrawFrame()
 		}
 	}
 
-	gfx_texture(&fontTex);
+	gfx_texture(0);
 	for (int y=0; y<mapSize.y; ++y) {
 		for (int x=0; x<mapSize.x; ++x) {
 			tile_t* tile = &mapTiles[y*mapSize.x + x];
 			if (tile->plant.alive) {
 				vec2_t pos = vec2((float)-mapSize.x/2 + x + 0.5f, (float)-mapSize.y/2 + y + 0.5f);
-				gfx_draw_text(&FONT_DEFAULT, pos, str_format("life %f", tile->plant.health));
-				gfx_draw_text(&FONT_DEFAULT, add2(pos, vec2(0, -0.25f)), str_format("water %f", tile->water));
+				// gfx_draw_text(&FONT_DEFAULT, pos, str_format("life %f", tile->plant.health));
+				// gfx_draw_text(&FONT_DEFAULT, add2(pos, vec2(0, -0.25f)), str_format("water %f", tile->water));
+				gfx_color(vec4(0, 1, 0, 1));
+				gfx_line_circle(add2(pos, vec2(0.4f, 0.25f)), tile->plant.health * 0.25f, 10);
+				gfx_color(vec4(0, 0, 1, 1));
+				gfx_line_circle(add2(pos, vec2(0.4f, -0.25f)), tile->water * 0.25f, 10);
 			}
 		}
 	}
 
 	// PLANTS
+	gfx_color(vec4(1, 1, 1, 1));
 	gfx_texture(&plantTex);
 	for (int y=0; y<mapSize.y; ++y) {
 		for (int x=0; x<mapSize.x; ++x) {
@@ -219,9 +224,10 @@ void D_DrawFrame()
 			if (tile->plant.alive) {
 				vec2_t pos = vec2((float)-mapSize.x/2 + x + 0.5f, (float)-mapSize.y/2 + y + 0.5f);
 				// gfx_draw_text(&FONT_DEFAULT, pos, "Hi");
+				int spriteStage = min(tile->plant.stage, tile->plant.def.spriteStages-1);
 				gfx_draw_sprite_rect(
 					add2(pos, vec2(0, tile->plant.def.spriteSize.y/64 + tile->plant.def.tileOffset)),
-					add2(tile->plant.def.spriteOffset, vec2(tile->plant.def.spriteSize.x * tile->plant.stage, 0)),
+					add2(tile->plant.def.spriteOffset, vec2(tile->plant.def.spriteSize.x * spriteStage, 0)),
 					tile->plant.def.spriteSize
 				);
 			}
@@ -381,7 +387,11 @@ void D_DrawFrame()
 			gfx_draw_text(&FONT_DEFAULT, add2(cursor, vec2(col + 1.75f, 0.4f)), plant->name);
 			char priceStr[64];
 			sprint(priceStr, 64, "$%u", plant->cost);
+			if (plant->cost > money) {
+				gfx_color(vec4(1, 0, 0, 1));
+			}
 			gfx_draw_text(&FONT_DEFAULT, add2(cursor, vec2(col + 1.75f + 3.25f, 0.4f)), priceStr);
+			gfx_color(vec4(1, 1, 1, 1));
 
 			uint32_t flags[] = {
 				PLANT_LIKES_WATER,

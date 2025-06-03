@@ -59,17 +59,19 @@ vec2_t dirVectors[] = {
 typedef enum {
 	WEATHER_CALM = 0,
 	WEATHER_RAIN,
+	WEATHER_HEAVY_RAIN,
 	WEATHER_WIND,
 	WEATHER_STORM,
-	WEATHER_HEAT,
+	// WEATHER_HEAT,
 	WEATHER_COUNT,
 } weather_t;
 char* weatherNames[] = {
 	"Calm",
 	"Rain",
+	"Heavy Rain",
 	"Wind",
 	"Storm",
-	"Heat Wave",
+	// "Heat Wave",
 };
 
 _Bool mapIslandMask[20*11] = {
@@ -96,14 +98,15 @@ typedef struct {
 	vec3_t pos;
 	float timer;
 } raindrop_t;
-raindrop_t rain[128];
+#define RAIN_COUNT (2048)
+raindrop_t rain[RAIN_COUNT];
 
 typedef struct {
 	vec3_t pos;
 	vec3_t speed;
 	float timer;
 } particle_t;
-particle_t particles[512];
+particle_t particles[RAIN_COUNT*2];
 
 vec2_t cameraPos = {0};
 
@@ -111,10 +114,10 @@ player_t player;
 vec2_t selectionPos;
 uint32_t money = 100;
 
-_Bool menuShop = _True;
+_Bool menuShop = _False;
 int32_t shopSelected = 0;
 
-_Bool isRaining = _True;
+// _Bool isRaining = _True;
 weather_t currentWeather;
 weather_t queuedWeather;
 float weatherEventTimer;
