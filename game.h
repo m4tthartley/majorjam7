@@ -102,11 +102,34 @@ typedef struct {
 raindrop_t rain[RAIN_COUNT];
 
 typedef struct {
+	enum {
+		WIND_SWIRL = 0,
+		WIND_DUST = 1,
+	} type;
+	vec3_t pos;
+	float timer;
+	float ani;
+} wind_t;
+wind_t wind[32];
+
+float lightningStrikeTimer;
+int2_t lightningStrikePos;
+vec2_t lightningVertices[8];
+
+typedef struct {
 	vec3_t pos;
 	vec3_t speed;
 	float timer;
 } particle_t;
 particle_t particles[RAIN_COUNT*2];
+
+typedef struct {
+	plant_def_t* plantDef;
+	vec2_t pos;
+	float rotation;
+} wind_debris_t;
+wind_debris_t windDebris;
+float windDebrisTimer;
 
 vec2_t cameraPos = {0};
 

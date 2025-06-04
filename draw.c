@@ -33,6 +33,7 @@ gfx_texture_t fontTex;
 gfx_texture_t plantTex;
 gfx_texture_t buildingTex;
 gfx_texture_t iconsTex;
+gfx_texture_t windTex;
 gfx_framebuffer_t framebuffer;
 
 char* tileVertexShader = "\
@@ -84,6 +85,7 @@ void D_Init()
 	plantTex = gfx_create_texture(load_bitmap_file(&memory, "assets/plants.bmp"));
 	buildingTex = gfx_create_texture(load_bitmap_file(&memory, "assets/buildings.bmp"));
 	iconsTex = gfx_create_texture(load_bitmap_file(&memory, "assets/icons.bmp"));
+	windTex = gfx_create_texture(load_bitmap_file(&memory, "assets/wind.bmp"));
 }
 
 void D_DrawSpriteRect(v2 pos, v2 sprite_offset, v2 sprite_size) {
@@ -199,21 +201,23 @@ void D_DrawFrame()
 		}
 	}
 
+#if 0
 	gfx_texture(0);
 	for (int y=0; y<mapSize.y; ++y) {
 		for (int x=0; x<mapSize.x; ++x) {
 			tile_t* tile = &mapTiles[y*mapSize.x + x];
 			if (tile->plant.alive) {
 				vec2_t pos = vec2((float)-mapSize.x/2 + x + 0.5f, (float)-mapSize.y/2 + y + 0.5f);
-				// gfx_draw_text(&FONT_DEFAULT, pos, str_format("life %f", tile->plant.health));
-				// gfx_draw_text(&FONT_DEFAULT, add2(pos, vec2(0, -0.25f)), str_format("water %f", tile->water));
 				gfx_color(vec4(0, 1, 0, 1));
 				gfx_line_circle(add2(pos, vec2(0.4f, 0.25f)), tile->plant.health * 0.25f, 10);
 				gfx_color(vec4(0, 0, 1, 1));
 				gfx_line_circle(add2(pos, vec2(0.4f, -0.25f)), tile->water * 0.25f, 10);
+				gfx_color(vec4(1, 0, 0, 1));
+				gfx_line_circle(add2(pos, vec2(0.4f, -0.75f)), tile->plant.blowAwayTimer * 0.01f, 10);
 			}
 		}
 	}
+#endif
 
 	// PLANTS
 	gfx_color(vec4(1, 1, 1, 1));
@@ -222,19 +226,38 @@ void D_DrawFrame()
 		for (int x=0; x<mapSize.x; ++x) {
 			tile_t* tile = &mapTiles[y*mapSize.x + x];
 			if (tile->plant.alive) {
-				vec2_t pos = vec2((float)-mapSize.x/2 + x + 0.5f, (float)-mapSize.y/2 + y + 0.5f);
-				// gfx_draw_text(&FONT_DEFAULT, pos, "Hi");
 				int spriteStage = min(tile->plant.stage, tile->plant.def.spriteStages-1);
-				gfx_draw_sprite_rect(
-					add2(pos, vec2(0, tile->plant.def.spriteSize.y/64 + tile->plant.def.tileOffset)),
-					add2(tile->plant.def.spriteOffset, vec2(tile->plant.def.spriteSize.x * spriteStage, 0)),
-					tile->plant.def.spriteSize
-				);
+				if (tile->plant.blowAway) {
+					glPushMatrix();
+					glTranslatef(tile->plant.blowAwayPos.x, tile->plant.blowAwayPos.y, 0);
+					glRotatef(todeg(tile->plant.blowAwayRotation), 0, 0, 1);
+					gfx_draw_sprite_rect(
+						vec2f(0),
+						add2(tile->plant.def.spriteOffset, vec2(tile->plant.def.spriteSize.x * spriteStage, 0)),
+						tile->plant.def.spriteSize
+					);
+					glPopMatrix();
+				} else {
+					if (tile->plant.burned) {
+						gfx_color(vec4(0, 0, 0, 1));
+					} else {
+						gfx_color(vec4(1, 1, 1, 1));
+					}
+					vec2_t pos = vec2((float)-mapSize.x/2 + x + 0.5f, (float)-mapSize.y/2 + y + 0.5f);
+					// gfx_draw_text(&FONT_DEFAULT, pos, "Hi");
+					tile->plant.blowAwayPos = add2(pos, vec2(0, tile->plant.def.spriteSize.y/64 + tile->plant.def.tileOffset));
+					gfx_draw_sprite_rect(
+						add2(pos, vec2(0, tile->plant.def.spriteSize.y/64 + tile->plant.def.tileOffset)),
+						add2(tile->plant.def.spriteOffset, vec2(tile->plant.def.spriteSize.x * spriteStage, 0)),
+						tile->plant.def.spriteSize
+					);
+				}
 			}
 		}
 	}
 
 	// PLAYER
+	gfx_color(vec4(1, 1, 1, 1));
 	{
 		vec2_t pos = vec2((float)-mapSize.x/2 + player.pos.x + 0.5f, (float)-mapSize.y/2 + player.pos.y + 0.5f);
 		gfx_texture(&playerTex);
@@ -302,6 +325,38 @@ void D_DrawFrame()
 			// vec2_t ground = vec2(particles[i].pos.x, particles[i].pos.y);
 			// glColor4f(0, 1, 0, 1);
 			// gfx_line(pos, ground);
+		}
+	}
+
+	// WIND
+	gfx_texture(&windTex);
+	gfx_color(vec4(1, 1, 1, 1));
+	for (int i=0; i<array_size(wind); ++i) {
+		wind_t* w = wind + i;
+
+		if (w->type == WIND_SWIRL) {
+			if (w->ani > 0.0f) {
+				gfx_draw_sprite_tile(w->pos.xy, min((int)w->ani, 11));
+			}
+		} else {
+			gfx_draw_sprite_tile(w->pos.xy, 12);
+		}
+	}
+
+	// LIGHTNING
+	if (lightningStrikeTimer > 0.0f && lightningStrikeTimer <= 0.125f) {
+		gfx_texture(0);
+		// gfx_color(vec4(1, 1, 1, 0.5f));
+		glColor4f(201.0f/255.0f, 212.0f/255.0f, 253.0f/255.0f, (lightningStrikeTimer*8.0f));
+		gfx_quad(vec2((float)mapSize.x/2, (float)mapSize.y/2), vec2(mapSize.x, mapSize.y));
+
+		glColor4f(201.0f/255.0f, 212.0f/255.0f, 253.0f/255.0f, 1);
+		vec2_t strikePos = vec2((float)lightningStrikePos.x + 0.5f, (float)lightningStrikePos.y + 0.5f);
+		vec2_t start = strikePos;
+		for (int i=0; i<array_size(lightningVertices); ++i) {
+			vec2_t point = add2(strikePos, lightningVertices[i]);
+			gfx_line(start, point);
+			start = point;
 		}
 	}
 

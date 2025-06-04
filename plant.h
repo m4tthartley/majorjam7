@@ -171,6 +171,14 @@ typedef struct {
 	_Bool alive;
 	float stageTimer;
 	uint32_t stage;
+
+	float blowAwayTimer;
+	_Bool blowAway;
+	vec2_t blowAwayPos;
+	float blowAwayRotation;
+
+	_Bool burned;
+	float burnedTimer;
 } plant_t;
 
 

@@ -35,6 +35,7 @@ void AddPlant(plant_def_t plantDef)
 		.health = 1.0f,
 		.alive = _True,
 		.stageTimer = 30.0f,
+		.blowAwayTimer = randfr(60.0f, 240.0f),
 	};
 
 	player.tile->plant = plant;
@@ -60,7 +61,7 @@ void G_ResetAllRain()
 void G_Init()
 {
 	timer = frametimer_init();
-	queuedWeather = WEATHER_CALM;
+	queuedWeather = WEATHER_WIND;
 
 	// mapSize.x = window.width / 32 / 2;
 	// mapSize.y = window.height / 32 / 2;
@@ -105,6 +106,7 @@ void G_Frame()
 	weatherEventTimer -= dt;
 	if (weatherEventTimer < 0.0f) {
 		weatherEventTimer = randfr(60.0f, 120.0f);
+		// weatherEventTimer = randfr(15.0f, 30.0f);
 		print("A weather event is occuring.. \n");
 
 		if (!(currentWeather==WEATHER_RAIN || currentWeather==WEATHER_HEAVY_RAIN || currentWeather==WEATHER_STORM) &&
@@ -112,8 +114,26 @@ void G_Frame()
 			G_ResetAllRain();
 		}
 
+		weather_t weightedWeather[] = {
+			WEATHER_CALM,
+			WEATHER_CALM,
+			WEATHER_CALM,
+			WEATHER_CALM,
+			WEATHER_CALM,
+			WEATHER_CALM,
+			WEATHER_RAIN,
+			WEATHER_RAIN,
+			WEATHER_RAIN,
+			WEATHER_WIND,
+			WEATHER_WIND,
+			WEATHER_WIND,
+			WEATHER_HEAVY_RAIN,
+			WEATHER_HEAVY_RAIN,
+			WEATHER_STORM,
+		};
+
 		currentWeather = queuedWeather;
-		while ((queuedWeather = randr(0, WEATHER_COUNT)) == currentWeather);
+		while ((queuedWeather = weightedWeather[randr(0, array_size(weightedWeather))]) == currentWeather);
 	}
 
 	if (menuShop) {
@@ -260,6 +280,36 @@ void G_Frame()
 			if (t->plant.health <= 0.0f) {
 				t->plant.alive = _False;
 			}
+
+			if (!(t->plant.def.flags & PLANT_LIKES_WIND) && currentWeather == WEATHER_WIND || currentWeather == WEATHER_STORM) {
+				t->plant.blowAwayTimer -= dt;
+			}
+			if (t->plant.blowAwayTimer <= 0.0f) {
+				// if (!windDebris.plantDef) {
+				// 	windDebris = (wind_debris_t){
+				// 		.plantDef = &plantDefs[t->plant.def.type],
+				// 		.pos = vec2(i%mapSize.x, i/mapSize.x),
+				// 	};
+				// }
+				t->plant.blowAway = _True;
+			}
+
+			if (t->plant.blowAway) {
+				t->plant.blowAwayPos.x -= 8.0f * dt;
+				t->plant.blowAwayPos.y += 1.0f * dt;
+				t->plant.blowAwayRotation += 0.5f * dt;
+
+				if (t->plant.blowAwayPos.x < (float)-mapSize.x/2 - 2.0f) {
+					t->plant.alive = _False;
+				}
+			}
+
+			if (t->plant.burned) {
+				t->plant.burnedTimer -= dt;
+				if (t->plant.burnedTimer <= 0.0f) {
+					t->plant.alive = _False;
+				}
+			}
 		}
 	}
 
@@ -300,6 +350,64 @@ void G_Frame()
 		}
 		else if (currentWeather == WEATHER_HEAVY_RAIN || currentWeather == WEATHER_STORM) {
 			rain[i].timer -= dt;
+		}
+	}
+
+	// WIND
+	for (int i=0; i<array_size(wind); ++i) {
+		wind_t* w = wind + i;
+
+		if (currentWeather == WEATHER_WIND || currentWeather == WEATHER_STORM) {
+			w->timer -= dt;
+		}
+		if (w->timer <= 0.0f) {
+			if (w->type == WIND_SWIRL) {
+				w->pos.x -= 10.0f * dt;
+			} else {
+				w->pos.x -= 20.0f * dt;
+				w->pos.y -= 2.0f * dt;
+			}
+			w->ani += dt * 10.0f;
+
+			if (w->pos.x < -1.0f) {
+				w->pos.x = (float)mapSize.x + 1.0f;
+				w->pos.y = randfr(0.0f, (float)mapSize.y);
+				w->timer = randfr(1.0f, 10.0f);
+				w->ani = randfr(-1.0f, 0.0f) * 10.0f;
+				w->type = randr(0, 4);
+			}
+		}
+	}
+
+	// WIND DEBRIS
+	// if (windDebrisTimer <= 0.0f) {
+	// 	windDebrisTimer = randfr(10.0f, 20.0f);
+
+	// 	for (int i=0; i<mapTotalTiles; ++i) {
+	// 		if ()
+	// 	}
+	// }
+	// if (windDebris.plantDef) {
+
+	// }
+
+	// LIGHTNING
+	if (currentWeather == WEATHER_STORM) {
+		lightningStrikeTimer -= dt;
+	}
+	if (lightningStrikeTimer < 0.0f) {
+		print("LIghtning STRIKE \n");
+		tile_t* hitTile = &mapTiles[lightningStrikePos.y*mapSize.x + lightningStrikePos.x];
+		if (!(hitTile->plant.def.flags & PLANT_LIGHTNING_RESISTANT)) {
+			hitTile->plant.burned = _True;
+			hitTile->plant.burnedTimer = 5.0f;
+		}
+
+		lightningStrikeTimer = randfr(5.0f, 10.0f);
+		lightningStrikePos = int2(randr(1, mapSize.x-1), randfr(1, mapSize.y-1));
+
+		for (int i=0; i<array_size(lightningVertices); ++i) {
+			lightningVertices[i] = vec2(i%2==1 ? randfr(0.0f, 0.5f) : randfr(0.5f, 1.0f), randfr(-0.5f, 0.5f) + (float)i + 1.0f);
 		}
 	}
 
