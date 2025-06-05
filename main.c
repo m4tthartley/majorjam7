@@ -6,15 +6,16 @@
 
 #define GL_SILENCE_DEPRECATION 1
 // #include <OpenGL/OpenGL.h>
+
+#include "game.c"
+#include "draw.c"
+
 #include <core/sysvideo.h>
 #include <core/sysaudio.h>
 #define CORE_IMPL
 #include <core/core.h>
 #include <core/math.h>
 // #include <core/glgfx.h>
-
-#include "game.c"
-#include "draw.c"
 
 
 sys_window_t window;

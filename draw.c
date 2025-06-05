@@ -4,12 +4,15 @@
 //
 
 
+#include <core/targetconditionals.h>
 #ifdef __APPLE__
 #	define GL_SILENCE_DEPRECATION 1
 // #	include <OpenGL/gl.h>
 #	include <OpenGL/glu.h>
 #endif
 #ifdef __WIN32__
+#	define WIN32_LEAN_AND_MEAN
+#	include <windows.h>
 #	include <gl/gl.h>
 #	include <gl/glu.h>
 #endif
