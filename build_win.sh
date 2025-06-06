@@ -6,11 +6,13 @@
 set -e
 mkdir -p ./build
 
-files="main.c ../core/core/sysvideo_win32.c"
-options="-g -luser32 -lgdi32 -lopengl32 -lglu32"
+# ../core/core/sysaudio_win32_xaudio.cpp
+files="main.c libs.c ../core/core/sysvideo_win32.c"
+options="-g -luser32 -lgdi32 -lopengl32 -lglu32 -lole32 -lxaudio2_9"
 
 gcc -o ./build/majorjam $files \
 	-I../core \
+	-static -static-libgcc -static-libstdc++\
 	$options \
 
 # -Wl,-rpath,@executable_path/Frameworks \

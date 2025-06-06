@@ -17,7 +17,6 @@
 #	include <gl/glu.h>
 #endif
 
-#define CORE_IMPL
 #include <core/glgfx.h>
 
 
@@ -301,6 +300,9 @@ void D_DrawFrame()
 			gfx_line_quad(vec2((float)-mapSize.x/2 + player.tilePos.x + 0.5f, (float)-mapSize.y/2 + player.tilePos.y + 0.5f), vec2f(1.0f));
 		}
 	}
+
+	// gfx_texture(&plantTex);
+	// D_DrawSpriteRect(vec2(0, 0), vec2(0, 0), vec2(256, 256));
 
 	// RAIN
 	glDisable(GL_TEXTURE_2D);
