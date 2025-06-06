@@ -60,20 +60,20 @@ plant_def_t plantDefs[] = {
 		.spriteSize = {64, 64},
 		.tileOffset = -0.3f,
 		.spriteStages = 3,
-		.cost = 30,
-		.profit = 60,
+		.cost = 60,
+		.profit = 15,
 		.reharvestable = _True,
 	},
 	{
 		.type = PLANT_SUGAR_CANE,
 		.name = "Sugar Cane",
 		.flags = PLANT_LIKES_WATER | PLANT_LIKES_DRY,
-		.spriteOffset = {0, 128},
-		.spriteSize = {32, 64},
+		.spriteOffset = {0, 128-1},
+		.spriteSize = {34, 65},
 		.tileOffset = -0.3f,
 		.spriteStages = 3,
-		.cost = 30,
-		.profit = 60,
+		.cost = 10,
+		.profit = 13,
 		.reharvestable = _False,
 	},
 	{
@@ -81,11 +81,11 @@ plant_def_t plantDefs[] = {
 		.name = "Mint Bush",
 		.flags = PLANT_LIKES_WATER | PLANT_LIKES_DRY | PLANT_LIGHTNING_RESISTANT,
 		.spriteOffset = {0, 96},
-		.spriteSize = {64, 32},
+		.spriteSize = {64+1, 32-1},
 		.tileOffset = -0.25f,
 		.spriteStages = 2,
-		.cost = 30,
-		.profit = 60,
+		.cost = 10,
+		.profit = 14,
 		.reharvestable = _False,
 	},
 	{
@@ -96,8 +96,8 @@ plant_def_t plantDefs[] = {
 		.spriteSize = {64, 64},
 		.tileOffset = -0.2f,
 		.spriteStages = 3,
-		.cost = 30,
-		.profit = 60,
+		.cost = 40,
+		.profit = 10,
 		.reharvestable = _True,
 	},
 	{
@@ -105,11 +105,11 @@ plant_def_t plantDefs[] = {
 		.name = "Water Chestnut",
 		.flags = PLANT_LIKES_WATER,
 		.spriteOffset = {0, 0},
-		.spriteSize = {16, 32},
+		.spriteSize = {16+1, 32},
 		.tileOffset = -0.2f,
 		.spriteStages = 2,
-		.cost = 30,
-		.profit = 60,
+		.cost = 3,
+		.profit = 5,
 		.reharvestable = _False,
 	},
 	{
@@ -117,11 +117,11 @@ plant_def_t plantDefs[] = {
 		.name = "Strawberries",
 		.flags = PLANT_LIKES_DRY | PLANT_LIGHTNING_RESISTANT,
 		.spriteOffset = {64, 0},
-		.spriteSize = {32, 32},
+		.spriteSize = {32+1, 32},
 		.tileOffset = -0.25f + -0.2f,
 		.spriteStages = 3,
-		.cost = 30,
-		.profit = 60,
+		.cost = 20,
+		.profit = 8,
 		.reharvestable = _True,
 	},
 	{
@@ -132,8 +132,8 @@ plant_def_t plantDefs[] = {
 		.spriteSize = {32, 32},
 		.tileOffset = -0.2f + -0.2f,
 		.spriteStages = 2,
-		.cost = 30,
-		.profit = 60,
+		.cost = 5,
+		.profit = 7,
 		.reharvestable = _False,
 	},
 	{
@@ -144,8 +144,8 @@ plant_def_t plantDefs[] = {
 		.spriteSize = {32, 32},
 		.tileOffset = -0.2f + -0.2f,
 		.spriteStages = 2,
-		.cost = 30,
-		.profit = 60,
+		.cost = 5,
+		.profit = 7,
 		.reharvestable = _False,
 	},
 	{
@@ -156,8 +156,8 @@ plant_def_t plantDefs[] = {
 		.spriteSize = {32, 32},
 		.tileOffset = -0.2f + -0.2f,
 		.spriteStages = 2,
-		.cost = 30,
-		.profit = 60,
+		.cost = 5,
+		.profit = 7,
 		.reharvestable = _False,
 	},
 };
@@ -179,6 +179,8 @@ typedef struct {
 
 	_Bool burned;
 	float burnedTimer;
+
+	_Bool windPosts;
 } plant_t;
 
 

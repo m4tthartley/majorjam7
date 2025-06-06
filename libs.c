@@ -4,6 +4,7 @@
 //
 
 
+#define GL_SILENCE_DEPRECATION 1
 #define CORE_IMPL
 #include <core/sysvideo.h>
 #include <core/core.h>

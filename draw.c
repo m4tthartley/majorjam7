@@ -73,21 +73,46 @@ void CheckGLError()
 	assert(err == GL_NO_ERROR);
 }
 
+gfx_texture_t LoadBitmapAndCreateTexture(char* file)
+{
+	char buffer[MAX_PATH_LENGTH] = {0};
+	sys_get_resource_path(buffer, MAX_PATH_LENGTH, file);
+
+	file_t f = sys_open(buffer);
+	if (!f) {
+		// char_copy(buffer, file, str_len(file));
+		strcpy(buffer, file);
+	}
+	sys_close(f);
+
+	bitmap_t* bitmap = load_bitmap_file(&memory, buffer);
+	gfx_texture_t texture = gfx_create_texture(bitmap);
+	return texture;
+}
+
 void D_Init()
 {
 	framebufferSize = int2(1280 / 2, 720 / 2);
 	framebuffer = gfx_create_framebuffer(framebufferSize.x, framebufferSize.y, GL_RGBA, GL_NEAREST);
 
-	tileBitmap = load_bitmap_file(&memory, "assets/land.bmp");
-	playerBitmap = load_bitmap_file(&memory, "assets/character.bmp");
-	tileTex = gfx_create_texture(tileBitmap);
-	playerTex = gfx_create_texture(playerBitmap);
+	// tileBitmap = load_bitmap_file(&memory, "assets/land.bmp");
+	// playerBitmap = load_bitmap_file(&memory, "assets/character.bmp");
+	// tileTex = gfx_create_texture(tileBitmap);
+	// playerTex = gfx_create_texture(playerBitmap);
+
+	// plantTex = gfx_create_texture(load_bitmap_file(&memory, "assets/plants.bmp"));
+	// buildingTex = gfx_create_texture(load_bitmap_file(&memory, "assets/buildings.bmp"));
+	// iconsTex = gfx_create_texture(load_bitmap_file(&memory, "assets/icons.bmp"));
+	// windTex = gfx_create_texture(load_bitmap_file(&memory, "assets/wind.bmp"));
+
 	fontTex = gfx_generate_font_texture(&memory, &FONT_DEFAULT);
 
-	plantTex = gfx_create_texture(load_bitmap_file(&memory, "assets/plants.bmp"));
-	buildingTex = gfx_create_texture(load_bitmap_file(&memory, "assets/buildings.bmp"));
-	iconsTex = gfx_create_texture(load_bitmap_file(&memory, "assets/icons.bmp"));
-	windTex = gfx_create_texture(load_bitmap_file(&memory, "assets/wind.bmp"));
+	tileTex = LoadBitmapAndCreateTexture("assets/land.bmp");
+	playerTex = LoadBitmapAndCreateTexture("assets/character.bmp");
+	plantTex = LoadBitmapAndCreateTexture("assets/plants.bmp");
+	buildingTex = LoadBitmapAndCreateTexture("assets/buildings.bmp");
+	iconsTex = LoadBitmapAndCreateTexture("assets/icons.bmp");
+	windTex = LoadBitmapAndCreateTexture("assets/wind.bmp");
 }
 
 void D_DrawSpriteRect(v2 pos, v2 sprite_offset, v2 sprite_size) {
@@ -180,7 +205,7 @@ void D_DrawFrame()
 				// glEnable(GL_TEXTURE_2D);
 				// glColor4f(1, 1, 1, 1);
 			}
-			if (tile->type == TILE_DIRT) {
+			if (tile->type == TILE_DIRT || tile->type == TILE_HOUSE_DIRT) {
 				D_DrawSpriteTile(vec2f(0), tile->water>0.5f ? 49 : 48);
 			}
 			if (tile->type == TILE_MARSH) {
@@ -203,6 +228,9 @@ void D_DrawFrame()
 		}
 	}
 
+	gfx_texture(&buildingTex);
+	gfx_draw_sprite_rect(vec2(2, 5), vec2(0, 0), vec2(112, 96));
+
 #if 0
 	gfx_texture(0);
 	for (int y=0; y<mapSize.y; ++y) {
@@ -223,11 +251,11 @@ void D_DrawFrame()
 
 	// PLANTS
 	gfx_color(vec4(1, 1, 1, 1));
-	gfx_texture(&plantTex);
 	for (int y=0; y<mapSize.y; ++y) {
 		for (int x=0; x<mapSize.x; ++x) {
 			tile_t* tile = &mapTiles[y*mapSize.x + x];
 			if (tile->plant.alive) {
+				gfx_texture(&plantTex);
 				int spriteStage = min(tile->plant.stage, tile->plant.def.spriteStages-1);
 				if (tile->plant.blowAway) {
 					glPushMatrix();
@@ -253,6 +281,20 @@ void D_DrawFrame()
 						add2(tile->plant.def.spriteOffset, vec2(tile->plant.def.spriteSize.x * spriteStage, 0)),
 						tile->plant.def.spriteSize
 					);
+
+					if (tile->plant.windPosts) {
+						gfx_texture(&iconsTex);
+						if (tile->plant.def.type == PLANT_BANANA || tile->plant.def.type == PLANT_MINT || tile->plant.def.type == PLANT_CRANBERRY) {
+							gfx_draw_sprite_rect(add2(pos, vec2(0, 0.5f)), vec2(64, 128), vec2(64, 64));
+						} else {
+							gfx_draw_sprite_rect(add2(pos, vec2(0, 0.5f)), vec2(0, 128), vec2(64, 64));
+						}
+					}
+
+					if (tile->plant.stage >= 2) {
+						gfx_texture(&iconsTex);
+						gfx_draw_sprite_rect(add2(pos, vec2(0.25f, 0.5f)), vec2(32, 192), vec2(32, 32));
+					}
 				}
 			}
 		}
@@ -281,21 +323,22 @@ void D_DrawFrame()
 		D_DrawSpriteTile(vec2(0, 0.5f), aniTile);
 		D_DrawSpriteTile(vec2(0, 0.5f + 1), aniTile + 8);
 
-		glDisable(GL_TEXTURE_2D);
-		gfx_point(vec2f(0));
+		// glDisable(GL_TEXTURE_2D);
+		gfx_texture(0);
+		// gfx_point(vec2f(0));
 		glPopMatrix();
 
 		vec2_t selectedPos = vec2((float)-mapSize.x/2 + selectionPos.x + 0.5f, (float)-mapSize.y/2 + selectionPos.y + 0.5f);
 		glPushMatrix();
 		glTranslatef(selectedPos.x, selectedPos.y, 0);
-		glDisable(GL_TEXTURE_2D);
-		glColor4f(1, 0, 0, 1);
-		gfx_point(vec2f(0));
+		// glDisable(GL_TEXTURE_2D);
+		// glColor4f(1, 0, 0, 1);
+		// gfx_point(vec2f(0));
 
 		// gfx_point(selectedPos);
 		glPopMatrix();
 
-		if (player.tile && player.tile->type != TILE_SEA) {
+		if (player.tile && player.tile->type != TILE_SEA && player.tile->type != TILE_HOUSE_DIRT) {
 			gfx_point(vec2((float)-mapSize.x/2 + player.tilePos.x + 0.5f, (float)-mapSize.y/2 + player.tilePos.y + 0.5f));
 			gfx_line_quad(vec2((float)-mapSize.x/2 + player.tilePos.x + 0.5f, (float)-mapSize.y/2 + player.tilePos.y + 0.5f), vec2f(1.0f));
 		}
@@ -410,6 +453,21 @@ void D_DrawFrame()
 	vec2_t moneyStrSize = gfx_layout_text(&FONT_DEFAULT, moneyStr);
 	gfx_draw_text(&FONT_DEFAULT, vec2((float)mapSize.x/2 - moneyStrSize.x - 0.125f, (float)mapSize.y/2 - 0.25f - 0.125f), moneyStr);
 	gfx_draw_text(&FONT_DEFAULT, vec2((float)-mapSize.x/2 + 0.125f, (float)-mapSize.y/2 + 0.125f), tileStr);
+
+	char* controlsStr = "(ENTER) to buy plants";
+	if (player.tile && player.tile->plant.alive) {
+		if (player.tile->plant.stage >= 2) {
+			controlsStr = "(ENTER) to sell this crop";
+		} else {
+			if (!(player.tile->plant.def.flags & PLANT_LIKES_WIND)) {
+				controlsStr = "(NUM1) to buy wind posts for $50";
+			} else {
+				controlsStr = "This plant is still growing";
+			}
+		}
+	}
+	vec2_t controlsStrSize = gfx_layout_text(&FONT_DEFAULT, controlsStr);
+	gfx_draw_text(&FONT_DEFAULT, vec2((float)mapSize.x/2 - controlsStrSize.x - 0.125f, -(float)mapSize.y/2 + 0.125f), controlsStr);
 
 	// MENU
 	if (menuShop) {

@@ -6,7 +6,7 @@
 set -e
 mkdir -p ./build
 
-files="main.c core/sysvideo_osx.m core/sysaudio_osx.m"
+files="main.c libs.c core/sysvideo_osx.m core/sysaudio_osx.m"
 options="-g -fno-objc-arc"
 
 clang -o ./build/majorjam $files \

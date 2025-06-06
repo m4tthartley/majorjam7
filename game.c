@@ -35,7 +35,7 @@ void AddPlant(plant_def_t plantDef)
 		.health = 1.0f,
 		.alive = _True,
 		.stageTimer = 30.0f,
-		.blowAwayTimer = randfr(60.0f, 240.0f),
+		.blowAwayTimer = randfr(60.0f, 120.0f),
 	};
 
 	player.tile->plant = plant;
@@ -61,7 +61,7 @@ void G_ResetAllRain()
 void G_Init()
 {
 	timer = frametimer_init();
-	queuedWeather = WEATHER_WIND;
+	queuedWeather = WEATHER_CALM;
 
 	// mapSize.x = window.width / 32 / 2;
 	// mapSize.y = window.height / 32 / 2;
@@ -77,11 +77,14 @@ void G_Init()
 
 		mapTiles[i].type = TILE_SEA;
 		// if (height > 0.5f) {
-		if (mapIslandMask[i]) {
+		if (mapIslandMask[i] == 1) {
 			mapTiles[i].type = TILE_DIRT;
 			if (height > 0.55f) {
 				mapTiles[i].type = TILE_MARSH;
 			}
+		}
+		if (mapIslandMask[i] == 2) {
+			mapTiles[i].type = TILE_HOUSE_DIRT;
 		}
 		float r = randfr(0.0f, 4.0f);
 		mapTiles[i].rotation = floorf(r);
@@ -165,18 +168,18 @@ void G_Frame()
 		}
 	} else {
 		// PLAYER CONTROLS
-		if (window.keyboard[KEY_A].down) {
-			cameraPos.x -= 10.0f * dt;
-		}
-		if (window.keyboard[KEY_D].down) {
-			cameraPos.x += 10.0f * dt;
-		}
-		if (window.keyboard[KEY_S].down) {
-			cameraPos.y -= 10.0f * dt;
-		}
-		if (window.keyboard[KEY_W].down) {
-			cameraPos.y += 10.0f * dt;
-		}
+		// if (window.keyboard[KEY_A].down) {
+		// 	cameraPos.x -= 10.0f * dt;
+		// }
+		// if (window.keyboard[KEY_D].down) {
+		// 	cameraPos.x += 10.0f * dt;
+		// }
+		// if (window.keyboard[KEY_S].down) {
+		// 	cameraPos.y -= 10.0f * dt;
+		// }
+		// if (window.keyboard[KEY_W].down) {
+		// 	cameraPos.y += 10.0f * dt;
+		// }
 
 		float playerSpeed = 3.0f * dt;
 		_Bool running = _False;
@@ -216,13 +219,13 @@ void G_Frame()
 			player.ani += 4.0f * dt;
 		}
 
-		if (window.keyboard[KEY_R].released) {
-			currentWeather = WEATHER_HEAVY_RAIN;
-		}
+		// if (window.keyboard[KEY_R].released) {
+		// 	currentWeather = WEATHER_HEAVY_RAIN;
+		// }
 
-		if (window.keyboard[KEY_P].released) {
-			weatherEventTimer = 1.0f;
-		}
+		// if (window.keyboard[KEY_P].released) {
+		// 	weatherEventTimer = 0.0f;
+		// }
 	}
 
 	// TILE SELECTION
@@ -233,21 +236,29 @@ void G_Frame()
 	pos.x = max(min(pos.x, mapSize.x-1), 0);
 	pos.y = max(min(pos.y, mapSize.y-1), 0);
 	player.tile = &mapTiles[pos.y*mapSize.x + pos.x];
-	if (player.tile->type != TILE_SEA &&
-		returnPressed && window.keyboard[KEY_RETURN].released) {
-		if (player.tile->plant.alive) {
-			if (player.tile->plant.stage==2) {
-				money += player.tile->plant.def.profit;
-				if (player.tile->plant.def.reharvestable) {
-					player.tile->plant.stageTimer = 30.0f;
-					player.tile->plant.stage = 1;
-				} else {
-					player.tile->plant = (plant_t){0};
+	if (player.tile->type != TILE_SEA && player.tile->type != TILE_HOUSE_DIRT) {
+		if (returnPressed && window.keyboard[KEY_RETURN].released) {
+			if (player.tile->plant.alive) {
+				if (player.tile->plant.stage==2) {
+					money += player.tile->plant.def.profit;
+					if (player.tile->plant.def.reharvestable) {
+						player.tile->plant.stageTimer = 30.0f;
+						player.tile->plant.stage = 1;
+					} else {
+						player.tile->plant = (plant_t){0};
+					}
 				}
+			} else {
+				menuShop = _True;
+				returnPressed = _False;
 			}
-		} else {
-			menuShop = _True;
-			returnPressed = _False;
+		}
+
+		if (!player.tile->plant.windPosts && !(player.tile->plant.def.flags & PLANT_LIKES_WIND) && window.keyboard[KEY_1].released) {
+			if (money >= 50) {
+				player.tile->plant.windPosts = _True;
+				money -= 50;
+			}
 		}
 	}
 
@@ -294,7 +305,7 @@ void G_Frame()
 				t->plant.blowAway = _True;
 			}
 
-			if (t->plant.blowAway) {
+			if (t->plant.blowAway && !t->plant.windPosts) {
 				t->plant.blowAwayPos.x -= 8.0f * dt;
 				t->plant.blowAwayPos.y += 1.0f * dt;
 				t->plant.blowAwayRotation += 0.5f * dt;
