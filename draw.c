@@ -4,6 +4,8 @@
 //
 
 
+#include <core/sys.h>
+
 #include <core/targetconditionals.h>
 #ifdef __APPLE__
 #	define GL_SILENCE_DEPRECATION 1
@@ -11,8 +13,6 @@
 #	include <OpenGL/glu.h>
 #endif
 #ifdef __WIN32__
-#	define WIN32_LEAN_AND_MEAN
-#	include <windows.h>
 #	include <gl/gl.h>
 #	include <gl/glu.h>
 #endif
@@ -75,17 +75,17 @@ void CheckGLError()
 
 gfx_texture_t LoadBitmapAndCreateTexture(char* file)
 {
-	char buffer[MAX_PATH_LENGTH] = {0};
-	sys_get_resource_path(buffer, MAX_PATH_LENGTH, file);
+	// char buffer[MAX_PATH_LENGTH] = {0};
+	// sys_get_resource_path(buffer, MAX_PATH_LENGTH, file);
 
-	file_t f = sys_open(buffer);
-	if (!f) {
-		// char_copy(buffer, file, str_len(file));
-		strcpy(buffer, file);
-	}
-	sys_close(f);
+	// file_t f = sys_open(buffer);
+	// if (!f) {
+	// 	// char_copy(buffer, file, str_len(file));
+	// 	strcpy(buffer, file);
+	// }
+	// sys_close(f);
 
-	bitmap_t* bitmap = load_bitmap_file(&memory, buffer);
+	bitmap_t* bitmap = load_bitmap_file(&memory, file);
 	gfx_texture_t texture = gfx_create_texture(bitmap);
 	return texture;
 }
@@ -256,7 +256,7 @@ void D_DrawFrame()
 			tile_t* tile = &mapTiles[y*mapSize.x + x];
 			if (tile->plant.alive) {
 				gfx_texture(&plantTex);
-				int spriteStage = min(tile->plant.stage, tile->plant.def.spriteStages-1);
+				int spriteStage = umin(tile->plant.stage, tile->plant.def.spriteStages-1);
 				if (tile->plant.blowAway) {
 					glPushMatrix();
 					glTranslatef(tile->plant.blowAwayPos.x, tile->plant.blowAwayPos.y, 0);
@@ -322,6 +322,8 @@ void D_DrawFrame()
 
 		D_DrawSpriteTile(vec2(0, 0.5f), aniTile);
 		D_DrawSpriteTile(vec2(0, 0.5f + 1), aniTile + 8);
+		// D_DrawSpriteRect(vec2(0, 0.5f), vec2(0, 192), vec2(32, 32));
+		// D_DrawSpriteRect(vec2(0, 0.5f + 1), vec2(0, 192+32), vec2(32, 30));
 
 		// glDisable(GL_TEXTURE_2D);
 		gfx_texture(0);
@@ -344,8 +346,8 @@ void D_DrawFrame()
 		}
 	}
 
-	// gfx_texture(&plantTex);
-	// D_DrawSpriteRect(vec2(0, 0), vec2(0, 0), vec2(256, 256));
+	gfx_texture(&plantTex);
+	D_DrawSpriteRect(vec2(0, 0), vec2(0, 0), vec2(256, 256));
 
 	// RAIN
 	glDisable(GL_TEXTURE_2D);

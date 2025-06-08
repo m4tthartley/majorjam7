@@ -146,10 +146,10 @@ void G_Frame()
 		}
 
 		if (window.keyboard[KEY_DOWN].released) {
-			shopSelected = min(shopSelected + 1, array_size(plantDefs)-1);
+			shopSelected = smin(shopSelected + 1, array_size(plantDefs)-1);
 		}
 		if (window.keyboard[KEY_UP].released) {
-			shopSelected = max(shopSelected - 1, 0);
+			shopSelected = smax(shopSelected - 1, 0);
 		}
 		if (window.keyboard[KEY_LEFT].released && shopSelected >= 5) {
 			shopSelected -= 5;
@@ -233,8 +233,8 @@ void G_Frame()
 	selectionPos = add2(player.pos, selectionOffset);
 	int2_t pos = int2(selectionPos.x + 0.5f, selectionPos.y + 0.5f);
 	player.tilePos = pos;
-	pos.x = max(min(pos.x, mapSize.x-1), 0);
-	pos.y = max(min(pos.y, mapSize.y-1), 0);
+	pos.x = smax(smin(pos.x, mapSize.x-1), 0);
+	pos.y = smax(smin(pos.y, mapSize.y-1), 0);
 	player.tile = &mapTiles[pos.y*mapSize.x + pos.x];
 	if (player.tile->type != TILE_SEA && player.tile->type != TILE_HOUSE_DIRT) {
 		if (returnPressed && window.keyboard[KEY_RETURN].released) {
@@ -279,7 +279,7 @@ void G_Frame()
 			// t->water = max(t->water - 0.1f*dt, 0.0f);
 			t->plant.stageTimer -= dt;
 			if (t->plant.stageTimer <= 0.0f) {
-				t->plant.stage = min(t->plant.stage+1, 2);
+				t->plant.stage = umin(t->plant.stage+1, 2);
 				t->plant.stageTimer = 30.0f;
 			}
 

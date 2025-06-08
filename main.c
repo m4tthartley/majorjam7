@@ -25,7 +25,7 @@ allocator_t tmpMemory;
 int main()
 {
 	sys_init_log("./output.log");
-	sys_init_window(&window, "Major Jam 7", 1920, 1080, WINDOW_CENTERED);
+	sys_init_window(&window, "Major Jam 7", 1280, 720, WINDOW_CENTERED);
 	sys_init_opengl(&window);
 	// sys_init_audio(&audio, (sysaudio_spec_t){
 	// 	.sampleRate = SYSAUDIO_SAMPLE_RATE_44K,

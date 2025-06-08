@@ -8,6 +8,7 @@
 #define CORE_IMPL
 #include <core/sysvideo.h>
 #include <core/core.h>
+#include <core/sys.h>
 #include <core/math.h>
 #include <core/time.h>
 #include <core/glgfx.h>
